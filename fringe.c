@@ -1,8 +1,88 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
-
+#include <assert.h>
+#include <string.h>
+#include <math.h>
 #include "fringe.h"
+///////////////////////////////////////////heap functions/////////////////////////
+
+int isEmptyHeap (Fringe h) {
+	return (h.front == 1);
+}
+
+void heapEmptyError() {
+	printf("heap empty\n");
+	abort();
+}
+
+void doubleHeapSize (Fringe *fringe) {
+	//printf("doubleing heap size\n");
+	int newSize = 2 * fringe->size;
+	fringe->states = realloc(fringe->states, newSize * sizeof(State));
+	assert(fringe->states != NULL);
+	fringe->size = newSize;
+}
+
+void swap(State *pa, State *pb) {
+	State h = *pa;
+	*pa = *pb;
+	*pb = h;
+}
+
+void enqueue (State n, Fringe *fringe) {
+	//printf ("enqueueing position with %c\n", n.type);
+	int fr = fringe->front;
+	if ( fr == fringe->size ) {
+		doubleHeapSize(fringe);
+	}
+	fringe->states[fr] = n;
+	upheap(fringe,fr);
+	//printf("the first position is %d %d\n", fringe->states[1].col, fringe->states[1].row);
+	fringe->front++;
+}
+
+void upheap(Fringe *fringe, int n){
+	//printf("upheap started\n");
+	if (n<=1){return;}
+	if ( fringe->states[n/2].value>fringe->states[n].value ) {
+		swap(&(fringe->states[n]),&(fringe->states[n/2]));
+		upheap(fringe,n/2);
+	}
+}
+
+void downheap (Fringe *fringe, int n) {
+	//printf("downheap started\n");
+	int fr = fringe->front;
+	int indexMax = n;
+	if ( fr < 2*n+1 ) { /* node n is a leaf, so nothing to do */
+		return;
+	}
+	if ( fringe->states[n].value > fringe->states[2*n].value ) {
+		indexMax = 2*n;
+	}
+	if ( fr > 2*n+1 && fringe->states[indexMax].value > fringe->states[2*n+1].value ) {
+		indexMax = 2*n+1;
+	}
+	if ( indexMax != n ) {
+		swap(&(fringe->states[n]),&(fringe->states[indexMax]));
+		downheap(fringe,indexMax);
+	}
+}
+
+State dequeue(Fringe *fringe) {
+	State n;
+	if ( isEmptyHeap(*(fringe) ) ){
+		heapEmptyError();
+	}
+	n = fringe->states[1];
+	fringe->front--;
+	fringe->states[1] = fringe->states[fringe->front];
+	downheap(fringe,1);
+	return n;
+}
+
+/////////////////////////////////Fringe functions////////////////////////////////////////////////
 
 Fringe makeFringe(int mode) {
   /* Returns an empty fringe. 
@@ -48,6 +128,7 @@ Fringe insertFringe(Fringe fringe, State s, ...) {
    */
   int priority;
   va_list argument;
+  printf("%d\n",state.value);
 
   if (fringe.size == MAXF) {
     fprintf(stderr, "insertFringe(..): fatal error, out of memory.\n");
@@ -63,18 +144,20 @@ Fringe insertFringe(Fringe fringe, State s, ...) {
     fringe.states[fringe.rear++] = s;
     fringe.rear %= MAXF;
     break;
-  case PRIO: /* PRIO == HEAP */
-  case HEAP:
-    /* Get the priority from the 3rd argument of this function.
-     * You are not supposed to understand the following 5 code lines.
-     */
-    va_start(argument, s); 
-    priority = va_arg(argument, int);
-    printf("priority = %d ", priority);
-    va_end(argument);
-    printf ("HEAP NOT IMPLEMENTED YET\n");
-    exit(EXIT_FAILURE);
-    break;
+  case PRIO: //using a heap for priority queue
+	enqueue(s, &fringe);
+	break;	
+  //case HEAP:
+    ///* Get the priority from the 3rd argument of this function.
+     //* You are not supposed to understand the following 5 code lines.
+     //*/
+    //va_start(argument, s); 
+    //priority = va_arg(argument, int);
+    //printf("priority = %d ", priority);
+    //va_end(argument);
+    //printf ("HEAP NOT IMPLEMENTED YET\n");
+    //exit(EXIT_FAILURE);
+    //break;
   }
   fringe.size++;
   if (fringe.size > fringe.maxSize) {
@@ -102,11 +185,13 @@ Fringe removeFringe(Fringe fringe, State *s) {
     *s = fringe.states[fringe.front++];
     fringe.front %= MAXF;
     break;
-  case PRIO: /* PRIO == HEAP */
-  case HEAP:
-    printf ("HEAP NOT IMPLEMENTED YET\n");
-    exit(EXIT_FAILURE);
-    break;
+  case PRIO: //for priotity queue implementation we use a heap
+	*s = dequeue(&fringe);
+	break;
+  //case HEAP:
+    //printf ("HEAP NOT IMPLEMENTED YET\n");
+    //exit(EXIT_FAILURE);
+    //break;
   }
   return fringe;
 }

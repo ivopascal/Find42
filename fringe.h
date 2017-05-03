@@ -1,8 +1,7 @@
+
 #ifndef FRINGE_H
 #define FRINGE_H
 #include <stdarg.h>
-
-#include "state.h"
 
 #define MAXF 500000  /* maximum fringe size */
 
@@ -11,6 +10,11 @@
 #define FIFO  3
 #define PRIO  4
 #define HEAP  5
+///////////////////////////////////////////////STATE DEFINITION///////////////////
+typedef struct {
+  int value;
+} State;
+///////////////////////////////////////////////////////////////////////////////////////
 
 typedef struct Fringe {
   int mode;      /* can be LIFO(STACK), FIFO, or PRIO(HEAP)          */
@@ -51,4 +55,14 @@ Fringe removeFringe(Fringe fringe, State *s);
 void showStats(Fringe fringe);
 /* Shows fringe statistics */
 
+///////////////////////////////////////////////HEAP FUNCTION DEFINITIONS///////////////////
+int isEmptyHeap (Fringe h) ;
+void heapEmptyError() ;
+void doubleHeapSize (Fringe *fringe) ;
+void swap(State *pa, State *pb) ;
+void enqueue (State n, Fringe *fringe) ;
+void upheap(Fringe *fringe, int n);
+void downheap (Fringe *fringe, int n) ;
+State dequeue(Fringe *fringe) ;
+////////////////////////////////////////////////////////////////////////////////////////////
 #endif

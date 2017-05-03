@@ -1,10 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include "state.h"
 #include "fringe.h"
-
 #define RANGE 1000000
 
 int newValue (int value, int cases){
