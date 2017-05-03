@@ -45,7 +45,7 @@ void enqueue (State n, Fringe *fringe) {
 void upheap(Fringe *fringe, int n){
 	//printf("upheap started\n");
 	if (n<=1){return;}
-	if ( fringe->states[n/2].value>fringe->states[n].value ) {
+	if ( fringe->states[n/2].cost>fringe->states[n].cost ) {
 		swap(&(fringe->states[n]),&(fringe->states[n/2]));
 		upheap(fringe,n/2);
 	}
@@ -58,10 +58,10 @@ void downheap (Fringe *fringe, int n) {
 	if ( fr < 2*n+1 ) { /* node n is a leaf, so nothing to do */
 		return;
 	}
-	if ( fringe->states[n].value > fringe->states[2*n].value ) {
+	if ( fringe->states[n].cost > fringe->states[2*n].cost ) {
 		indexMax = 2*n;
 	}
-	if ( fr > 2*n+1 && fringe->states[indexMax].value > fringe->states[2*n+1].value ) {
+	if ( fr > 2*n+1 && fringe->states[indexMax].cost > fringe->states[2*n+1].cost ) {
 		indexMax = 2*n+1;
 	}
 	if ( indexMax != n ) {
@@ -82,6 +82,14 @@ State dequeue(Fringe *fringe) {
 	return n;
 }
 
+void printHeap(Fringe fringe){
+	printf("heap is :");
+	for (int i = 0; i< fringe.size; i++){
+		printf("%d ", fringe.states[i]);
+	}
+	printf("\n");
+}
+
 /////////////////////////////////Fringe functions////////////////////////////////////////////////
 
 Fringe makeFringe(int mode) {
@@ -98,6 +106,7 @@ Fringe makeFringe(int mode) {
   f.mode = mode;
   f.size = f.front = f.rear = 0; /* front+rear only used in FIFO mode */
   f.states = malloc(MAXF*sizeof(State));
+  if (mode == HEAP||mode == PRIO){f.size = f.front = f.rear = 1;} // heap index starts from 1, easier to calculate
   if (f.states == NULL) {
 	fprintf(stderr, "makeFringe(): memory allocation failed.\n");
     exit(EXIT_FAILURE);      
@@ -126,9 +135,9 @@ Fringe insertFringe(Fringe fringe, State s, ...) {
   /* Inserts s in the fringe, and returns the new fringe.
    * This function needs a third parameter in PRIO(HEAP) mode.
    */
-  int priority;
-  va_list argument;
-  printf("%d\n",state.value);
+  // printf("%d\n", s.value);
+  //int priority;
+  //va_list argument;
 
   if (fringe.size == MAXF) {
     fprintf(stderr, "insertFringe(..): fatal error, out of memory.\n");
@@ -144,9 +153,10 @@ Fringe insertFringe(Fringe fringe, State s, ...) {
     fringe.states[fringe.rear++] = s;
     fringe.rear %= MAXF;
     break;
+  case HEAP:
   case PRIO: //using a heap for priority queue
 	enqueue(s, &fringe);
-	break;	
+	break;
   //case HEAP:
     ///* Get the priority from the 3rd argument of this function.
      //* You are not supposed to understand the following 5 code lines.
@@ -170,6 +180,7 @@ Fringe removeFringe(Fringe fringe, State *s) {
   /* Removes an element from the fringe, and returns it in s. 
    * Moreover, the new fringe is returned.
    */
+   //printf ("removing\n");
   if (fringe.size < 1) {
     fprintf(stderr, "removeFringe(..): fatal error, empty fringe.\n");
     exit(EXIT_FAILURE);    
@@ -185,7 +196,9 @@ Fringe removeFringe(Fringe fringe, State *s) {
     *s = fringe.states[fringe.front++];
     fringe.front %= MAXF;
     break;
+  case HEAP:
   case PRIO: //for priotity queue implementation we use a heap
+	//printHeap(fringe);
 	*s = dequeue(&fringe);
 	break;
   //case HEAP:

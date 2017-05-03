@@ -27,8 +27,10 @@ int newValue (int value, int cases){
 	}
 }
 
-Fringe insertValidSucc(Fringe fringe, int value) {
+Fringe insertValidSucc(Fringe fringe, int value, int cost, int pathlen, int cases) {
   State s;
+  s.cost = cost + (cases / 2) + 1;
+  s.pathlen = pathlen + 1;
   if ((value <= 0) || (value > RANGE)) {
     /* ignore states that are out of bounds */
     return fringe;
@@ -47,13 +49,14 @@ void search(int mode, int start, int goal) {
   fringe = makeFringe(mode);
   state.value = start;
   fringe = insertFringe(fringe, state);
-  while (!isEmptyFringe(fringe)) {
+  int control = 0;
+  while (!isEmptyFringe(fringe)&&control < 1000000) {
     /* get a state from the fringe */
     fringe = removeFringe(fringe, &state);
     visited++;
     /* is state the goal? */
     value = state.value;
-    
+    //printf("value is %d\n", value);
     int valNew;
     
     /* insert neighbouring states */
@@ -64,9 +67,10 @@ void search(int mode, int start, int goal) {
 			goalReached = 1;
 			break;
 		}
-		fringe = insertValidSucc(fringe, valNew);
+		fringe = insertValidSucc(fringe, valNew, state.cost, state.pathlen, cases);
 	}
 	if (goalReached){break;} 
+	control ++;
   }
   if (goalReached == 0) {
     printf("goal not reachable ");
