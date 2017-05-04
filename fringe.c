@@ -40,7 +40,7 @@ void swap(State *pa, State *pb) {
 void enqueue (State n, Fringe *fringe) {
 	//printf ("enqueueing position\n");
 	int fr = fringe->front;
-	if ( fr >= 1 + 6 * fringe->size ) { 		//size represents the number of states visited, needed to multiply by 6
+	if ( fr >= 1 +  fringe->size ) { 		//size is only increased after enqueing
 		doubleHeapSize(fringe);
 	}
 	fringe->states[fr] = n;
@@ -80,7 +80,8 @@ State dequeue(Fringe *fringe) {
 	//printf("dequeue started\n");
 	State n;
 	if ( isEmptyHeap(*(fringe) ) ){
-		heapEmptyError();
+		//heapEmptyError();
+		return n;
 	}
 	n = fringe->states[1];
 	fringe->front--;
@@ -113,7 +114,10 @@ Fringe makeFringe(int mode) {
   f.mode = mode;
   f.size = f.front = f.rear = 0; /* front+rear only used in FIFO mode */
   f.states = malloc(MAXF*sizeof(State));
-  if (mode == HEAP||mode == PRIO){f.size = f.front = f.rear = 1;} // heap index starts from 1, easier to calculate
+  if (mode == HEAP||mode == PRIO){
+	  f.size = f.front = f.rear = 1;
+	  f.states[0].path = malloc(sizeof(Operation));
+	  } 						// heap index starts from 1, easier to calculate, allocated memory for easy free
   if (f.states == NULL) {
 	fprintf(stderr, "makeFringe(): memory allocation failed.\n");
     exit(EXIT_FAILURE);      
