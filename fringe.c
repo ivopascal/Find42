@@ -116,7 +116,6 @@ Fringe makeFringe(int mode) {
   f.states = malloc(MAXF*sizeof(State));
   if (mode == HEAP||mode == PRIO){
 	  f.size = f.front = f.rear = 1;
-	  f.states[0].path = malloc(sizeof(Operation));
 	  } 						// heap index starts from 1, easier to calculate, allocated memory for easy free
   if (f.states == NULL) {
 	fprintf(stderr, "makeFringe(): memory allocation failed.\n");
@@ -133,7 +132,8 @@ void deallocFringe(Fringe fringe) {
   /* Frees the memory allocated for the fringe */
   while(!isEmptyFringe(fringe)){
 	 fringe = removeFringe(fringe, &state);
-	 free(state.path);
+	 if(state.value != -1) 
+	 	free(state.path);
   }
   free(fringe.states);
 }
