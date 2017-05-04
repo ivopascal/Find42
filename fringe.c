@@ -81,6 +81,8 @@ State dequeue(Fringe *fringe) {
 	State n;
 	if ( isEmptyHeap(*(fringe) ) ){
 		//heapEmptyError();
+		/*This value is used to message that this state should not be freed*/
+		n.value = -1;
 		return n;
 	}
 	n = fringe->states[1];
@@ -132,9 +134,12 @@ void deallocFringe(Fringe fringe) {
   State state;
   /* Frees the memory allocated for the fringe */
   while(!isEmptyFringe(fringe)){
-	 fringe = removeFringe(fringe, &state);
-	 free(state.path);
+	fringe = removeFringe(fringe, &state);
+	if(state.value != -1){
+		free(state.path);
+	}
   }
+  if(fringe.mode == HEAP | fringe.mode == PRIO){free(fringe.states[0].path);}
   free(fringe.states);
 }
 void resetFringe(Fringe fringe){
