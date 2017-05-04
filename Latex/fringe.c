@@ -80,7 +80,8 @@ State dequeue(Fringe *fringe) {
 	//printf("dequeue started\n");
 	State n;
 	if ( isEmptyHeap(*(fringe) ) ){
-		//heapEmptyError();
+		/* -1 is a messaging value to not free the state in deallocFringe */
+		n.value = -1;
 		return n;
 	}
 	n = fringe->states[1];
@@ -116,7 +117,6 @@ Fringe makeFringe(int mode) {
   f.states = malloc(MAXF*sizeof(State));
   if (mode == HEAP||mode == PRIO){
 	  f.size = f.front = f.rear = 1;
-	  f.states[0].path = malloc(sizeof(Operation));
 	  } 						// heap index starts from 1, easier to calculate, allocated memory for easy free
   if (f.states == NULL) {
 	fprintf(stderr, "makeFringe(): memory allocation failed.\n");
@@ -131,9 +131,9 @@ Fringe makeFringe(int mode) {
 void deallocFringe(Fringe fringe) {
   State state;
   /* Frees the memory allocated for the fringe */
-  while(!isEmptyFringe(fringe)){
+  while(!isEmptyFringe(fringe)){ 
 	 fringe = removeFringe(fringe, &state);
-	 free(state.path);
+	 if(state.value != -1)free(state.path);
   }
   free(fringe.states);
 }
