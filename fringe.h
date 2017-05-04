@@ -10,11 +10,22 @@
 #define FIFO  3
 #define PRIO  4
 #define HEAP  5
+#define IDS	  6
+
+/////////////////////////////////////////Operation definition///////////////////////////////////////////////////
+typedef struct Operation {
+	int op;
+	int value;
+}Operation;
+
+Operation newOp(int op, int value);
 ///////////////////////////////////////////////STATE DEFINITION///////////////////
 typedef struct {
   int value;
   int cost;
   int pathlen;
+  int depth;
+  Operation *path;
 } State;
 ///////////////////////////////////////////////////////////////////////////////////////
 
@@ -54,6 +65,8 @@ Fringe removeFringe(Fringe fringe, State *s);
  * Moreover, the new fringe is returned.
  */
 
+void resetFringe(Fringe fringe);
+
 void showStats(Fringe fringe);
 /* Shows fringe statistics */
 
@@ -66,5 +79,6 @@ void enqueue (State n, Fringe *fringe) ;
 void upheap(Fringe *fringe, int n);
 void downheap (Fringe *fringe, int n) ;
 State dequeue(Fringe *fringe) ;
-////////////////////////////////////////////////////////////////////////////////////////////
+void printHeap();
+
 #endif

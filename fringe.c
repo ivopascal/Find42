@@ -5,6 +5,13 @@
 #include <string.h>
 #include <math.h>
 #include "fringe.h"
+///////////////////////////////////////////operation functions/////////////////////////
+Operation newOp(int op, int value){
+	Operation o;
+	o.value = value;
+	o.op = op;
+	return o;
+}
 ///////////////////////////////////////////heap functions/////////////////////////
 
 int isEmptyHeap (Fringe h) {
@@ -31,14 +38,13 @@ void swap(State *pa, State *pb) {
 }
 
 void enqueue (State n, Fringe *fringe) {
-	//printf ("enqueueing position with %c\n", n.type);
+	//printf ("enqueueing position\n");
 	int fr = fringe->front;
-	if ( fr == fringe->size ) {
+	if ( fr >= 1 + 6 * fringe->size ) { 		//size represents the number of states visited, needed to multiply by 6
 		doubleHeapSize(fringe);
 	}
 	fringe->states[fr] = n;
 	upheap(fringe,fr);
-	//printf("the first position is %d %d\n", fringe->states[1].col, fringe->states[1].row);
 	fringe->front++;
 }
 
@@ -71,6 +77,7 @@ void downheap (Fringe *fringe, int n) {
 }
 
 State dequeue(Fringe *fringe) {
+	//printf("dequeue started\n");
 	State n;
 	if ( isEmptyHeap(*(fringe) ) ){
 		heapEmptyError();
@@ -98,7 +105,7 @@ Fringe makeFringe(int mode) {
    */
   Fringe f;
   if ((mode != LIFO) && (mode != STACK) && (mode != FIFO) &&
-      (mode != PRIO) && (mode != HEAP)) {
+      (mode != PRIO) && (mode != HEAP) && (mode != IDS)) {
     fprintf(stderr, "makeFringe(mode=%d): incorrect mode. ", mode);
     fprintf(stderr, "(mode <- [LIFO,STACK,FIFO,PRIO,HEAP])\n");
     exit(EXIT_FAILURE);
@@ -115,9 +122,21 @@ Fringe makeFringe(int mode) {
   return f;
 }
 
+
+
 void deallocFringe(Fringe fringe) {
+  State state;
   /* Frees the memory allocated for the fringe */
+  while(!isEmptyFringe(fringe)){
+	 fringe = removeFringe(fringe, &state);
+	 free(state.path);
+  }
   free(fringe.states);
+}
+void resetFringe(Fringe fringe){
+	deallocFringe(fringe);
+	fringe.states = malloc(MAXF*sizeof(State));
+	fringe.front = fringe.rear = fringe.size = 0;
 }
 
 int getFringeSize(Fringe fringe) {
@@ -147,6 +166,7 @@ Fringe insertFringe(Fringe fringe, State s, ...) {
   switch (fringe.mode) {
   case LIFO: /* LIFO == STACK */
   case STACK:
+  case IDS:
     fringe.states[fringe.size] = s;
     break;
   case FIFO:
@@ -157,18 +177,8 @@ Fringe insertFringe(Fringe fringe, State s, ...) {
   case PRIO: //using a heap for priority queue
 	enqueue(s, &fringe);
 	break;
-  //case HEAP:
-    ///* Get the priority from the 3rd argument of this function.
-     //* You are not supposed to understand the following 5 code lines.
-     //*/
-    //va_start(argument, s); 
-    //priority = va_arg(argument, int);
-    //printf("priority = %d ", priority);
-    //va_end(argument);
-    //printf ("HEAP NOT IMPLEMENTED YET\n");
-    //exit(EXIT_FAILURE);
-    //break;
   }
+
   fringe.size++;
   if (fringe.size > fringe.maxSize) {
     fringe.maxSize = fringe.size;
@@ -190,6 +200,7 @@ Fringe removeFringe(Fringe fringe, State *s) {
   switch (fringe.mode) {
   case LIFO: /* LIFO == STACK */
   case STACK:
+  case IDS:
     *s = fringe.states[fringe.size];
     break;
   case FIFO:
@@ -198,13 +209,8 @@ Fringe removeFringe(Fringe fringe, State *s) {
     break;
   case HEAP:
   case PRIO: //for priotity queue implementation we use a heap
-	//printHeap(fringe);
 	*s = dequeue(&fringe);
 	break;
-  //case HEAP:
-    //printf ("HEAP NOT IMPLEMENTED YET\n");
-    //exit(EXIT_FAILURE);
-    //break;
   }
   return fringe;
 }

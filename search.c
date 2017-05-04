@@ -10,13 +10,13 @@ int newValue (int value, int cases){
 			value += 1;
 			return value;
 		case 1:
-			value *= 2;
+			value -= 1;
 			return value;
 		case 2:
-			value *= 3;
+			value *= 2;
 			return value;
 		case 3:
-			value -= 1;
+			value *= 3;
 			return value;
 		case 4:
 			value /= 2;
@@ -26,16 +26,57 @@ int newValue (int value, int cases){
 			return value;
 	}
 }
+char *operationID(int cases){
+	char *stringOperator;
+	switch (cases){
+		case 0:
+			stringOperator = "+1";
+			return stringOperator;
+		case 1:
+			stringOperator = "-1";
+			return stringOperator;
+		case 2:
+			stringOperator = "*2";
+			return stringOperator;
+		case 3:
+			stringOperator = "*3";
+			return stringOperator;
+		case 4:
+			stringOperator = "/2";
+			return stringOperator;
+		case 5:
+			stringOperator = "/3";
+			return stringOperator;
+	}
+}
 
-Fringe insertValidSucc(Fringe fringe, int value, int cost, int pathlen, int cases) {
+void updateState(State *s, State old, int cases, int value){
+  s->cost = old.cost + (cases / 2) + 1;
+  s->pathlen = old.pathlen + 1;
+  s->depth = old.depth + 1;
+  s->value = value;
+  s->path = malloc((old.pathlen + 1) * sizeof(Operation));
+  for (int i = 0; i<old.pathlen; i++){
+	s->path[i] = old.path[i]; 
+	}
+  s->path[old.pathlen] = newOp(cases, value);
+}
+
+void printPath(State s){
+	for (int i = 0; i< s.pathlen ; i++){
+		printf(" (%s)->%d ", operationID(s.path[i].op), s.path[i].value);
+	}
+	printf("\nlength = %d, cost = %d\n", s.pathlen, s.cost);
+}
+
+Fringe insertValidSucc(Fringe fringe, int value, State old, int cases) {
   State s;
-  s.cost = cost + (cases / 2) + 1;
-  s.pathlen = pathlen + 1;
+
   if ((value <= 0) || (value > RANGE)) {
     /* ignore states that are out of bounds */
     return fringe;
   }
-  s.value = value;
+  updateState(&s, old, cases, value);
   return insertFringe(fringe, s);
 }
 
@@ -45,33 +86,47 @@ void search(int mode, int start, int goal) {
   int goalReached = 0;
   int visited = 0;
   int value;
-
+  int limit = 9999999;					//set limit to infinity for non-IDS modes
+  if (mode == IDS){limit = 1;}
   fringe = makeFringe(mode);
-  state.value = start;
-  fringe = insertFringe(fringe, state);
-  int control = 0;
-  while (!isEmptyFringe(fringe)&&control < 1000000) {
-    /* get a state from the fringe */
-    fringe = removeFringe(fringe, &state);
-    visited++;
-    /* is state the goal? */
-    value = state.value;
-    //printf("value is %d\n", value);
-    int valNew;
-    
-    /* insert neighbouring states */
-    int cases;
-    for (cases = 0; cases < 6; cases++){
-		valNew = newValue(value, cases);
-		if (valNew == goal){
-			goalReached = 1;
-			break;
+
+  
+  do{									//Extra loop for the iterative deepening, in other mode only 1 iteration
+	  //printf("limit is %d\n", limit);
+	  state.value = start;
+	  state.depth = 0;
+	  state.pathlen = 0;
+	  state.cost = 0;
+	    state.path = malloc(sizeof(Operation));
+		fringe = insertFringe(fringe, state);
+	  while (!isEmptyFringe(fringe)) {
+		/* get a state from the fringe */
+		fringe = removeFringe(fringe, &state);
+		visited++;
+		/* is state the goal? */
+		value = state.value;
+		int valNew;
+		/* insert neighbouring states */
+		for (int cases = 0; cases < 6; cases++){
+			valNew = newValue(value, cases);
+			if (state.depth <= limit){	//in non-IDS this is always true	
+				if (valNew == goal){
+					goalReached = 1;
+					State printState;
+					updateState(&printState , state, cases, valNew);
+					printPath(printState);
+					free(state.path);
+					free(printState.path);
+					break;
+				}
+				fringe = insertValidSucc(fringe, valNew, state, cases);
+			}
 		}
-		fringe = insertValidSucc(fringe, valNew, state.cost, state.pathlen, cases);
-	}
-	if (goalReached){break;} 
-	control ++;
-  }
+		if (goalReached){break;}
+		free(state.path);
+	  }
+	limit++;
+	}while (mode == IDS&&!goalReached);
   if (goalReached == 0) {
     printf("goal not reachable ");
   } else {
@@ -79,13 +134,13 @@ void search(int mode, int start, int goal) {
   }
   printf("(%d nodes visited)\n", visited);
   showStats(fringe);
-  deallocFringe(fringe);  
+  deallocFringe(fringe);
 }
 
 int main(int argc, char *argv[]) {
   int start, goal, fringetype;
   if ((argc == 1) || (argc > 4)) {
-    fprintf(stderr, "Usage: %s <STACK|FIFO|HEAP> [start] [goal]\n", argv[0]);
+    fprintf(stderr, "Usage: %s <STACK|FIFO|HEAP|IDS> [start] [goal]\n", argv[0]);
     return EXIT_FAILURE;
   }
   fringetype = 0;
@@ -96,9 +151,10 @@ int main(int argc, char *argv[]) {
     fringetype = FIFO;
   } else if ((strcmp(argv[1], "HEAP") == 0) || (strcmp(argv[1], "PRIO") == 0)) {
     fringetype = HEAP;
-  }
+  } else if (strcmp(argv[1], "IDS") == 0)
+	fringetype = IDS;
   if (fringetype == 0) {
-    fprintf(stderr, "Usage: %s <STACK|FIFO|HEAP> [start] [goal]\n", argv[0]);
+    fprintf(stderr, "Usage: %s <STACK|FIFO|HEAP|IDS> [start] [goal]\n", argv[0]);
     return EXIT_FAILURE;
   }
 
